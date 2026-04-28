@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(BUYER)
+  createdAt     DateTime  @default(now())
+
+  wallet        Wallet?
+  escrowsAsBuyer  Escrow[] @relation("BuyerEscrows")
+  escrowsAsSeller Escrow[] @relation("SellerEscrows")
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  balance   Decimal  @default(0) @db.Decimal(18, 2)
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(18, 2)
+  description String?
+  stripeId    String?         @unique
+  walletId    String
+  wallet      Wallet          @relation(fields: [walletId], references: [id])
+  createdAt   DateTime        @default(now())
+}
+
+model Escrow {
+  id          String       @id @default(cuid())
+  amount      Decimal      @db.Decimal(18, 2)
+  status      EscrowStatus @default(PENDING)
+  description String?
+  buyerId     String
+  sellerId    String
+  buyer       User         @relation("BuyerEscrows", fields: [buyerId], references: [id])
+  seller      User         @relation("SellerEscrows", fields: [sellerId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum EscrowStatus {
+  PENDING
+  FUNDED
+  RELEASED
+  REFUNDED
+  DISPUTED
+}
+
+enum TransactionType {
+  TOPUP
+  ESCROW_LOCK
+  ESCROW_RELEASE
+  REFUND
+}

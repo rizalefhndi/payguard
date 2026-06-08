@@ -8,11 +8,25 @@ import { ArrowDownToLine, ShieldCheck, TrendingUp, Clock } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { id } from "date-fns/locale"
 import Link from "next/link"
+import AdminOverview from "@/components/dashboard/admin-overview"
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/login")
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+
+  if (!currentUser) redirect("/login")
+
+  // Admin gets its own overview
+  if (currentUser.role === "ADMIN") {
+    return <AdminOverview />
+  }
+
+  // Buyer / Seller personal dashboard
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
@@ -43,7 +57,7 @@ export default async function DashboardPage() {
     0
   )
 
-  const statusColor: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  const txColor: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
     TOPUP: "default",
     ESCROW_LOCK: "secondary",
     ESCROW_RELEASE: "outline",
@@ -135,13 +149,10 @@ export default async function DashboardPage() {
 
       {/* Recent Transactions + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Transactions */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">
-                Transaksi Terbaru
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Transaksi Terbaru</CardTitle>
               <Link href="/dashboard/transactions">
                 <Button variant="ghost" size="sm" className="text-xs h-7">
                   Lihat semua →
@@ -182,7 +193,7 @@ export default async function DashboardPage() {
                         {Number(tx.amount).toFixed(2)}
                       </p>
                       <Badge
-                        variant={statusColor[tx.type] ?? "secondary"}
+                        variant={txColor[tx.type] ?? "secondary"}
                         className="text-xs mt-0.5"
                       >
                         {tx.type}
@@ -195,7 +206,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>

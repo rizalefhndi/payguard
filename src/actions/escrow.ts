@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { createNotif, createNotifMany } from "@/lib/notify"
 
 const createEscrowSchema = z.object({
   sellerId: z.string(),
@@ -71,6 +72,14 @@ export async function createEscrow(input: z.infer<typeof createEscrowSchema>) {
     })
 
     revalidatePath("/dashboard")
+    // Notif ke seller
+    await createNotif({
+      userId: result.sellerId,
+      type: "ESCROW_NEW",
+      title: "Escrow baru masuk",
+      message: `Buyer telah membuat escrow "${result.description}" senilai $${Number(result.amount).toFixed(2)}`,
+      link: `/dashboard/escrow/${result.id}`,
+    })
     return { success: true, escrow: result }
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Gagal membuat escrow"
@@ -94,6 +103,7 @@ export async function releaseFunds(escrowId: string) {
 
       if (!escrow) throw new Error("Escrow tidak ditemukan")
       if (escrow.buyerId !== session.user.id) throw new Error("Bukan escrow kamu")
+      if (escrow.status === "DISPUTED") throw new Error("Escrow sedang dalam dispute — tunggu resolusi admin")
       if (escrow.status !== "FUNDED") throw new Error("Escrow tidak bisa dirilis")
 
       // 2. Update status escrow → RELEASED
@@ -123,6 +133,15 @@ export async function releaseFunds(escrowId: string) {
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/escrow")
+    revalidatePath(`/dashboard/escrow/${escrowId}`)
+    // Notif ke seller
+    await createNotif({
+      userId: result.sellerId,
+      type: "ESCROW_RELEASED",
+      title: "Dana escrow dirilis",
+      message: `Buyer telah merilis dana $${Number(result.amount).toFixed(2)} untuk "${result.description}"`,
+      link: `/dashboard/escrow/${result.id}`,
+    })
     return { success: true, escrow: result }
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Gagal merilis dana"
@@ -145,6 +164,7 @@ export async function refundEscrow(escrowId: string) {
 
       if (!escrow) throw new Error("Escrow tidak ditemukan")
       if (escrow.buyerId !== session.user.id) throw new Error("Bukan escrow kamu")
+      if (escrow.status === "DISPUTED") throw new Error("Escrow sedang dalam dispute — tunggu resolusi admin")
       if (escrow.status !== "FUNDED") throw new Error("Escrow tidak bisa direfund")
 
       // Update status → REFUNDED
@@ -174,6 +194,15 @@ export async function refundEscrow(escrowId: string) {
 
     revalidatePath("/dashboard")
     revalidatePath("/dashboard/escrow")
+    revalidatePath(`/dashboard/escrow/${escrowId}`)
+    // Notif ke seller
+    await createNotif({
+      userId: result.sellerId,
+      type: "ESCROW_REFUNDED",
+      title: "Escrow direfund",
+      message: `Buyer telah mengajukan refund untuk "${result.description}" senilai $${Number(result.amount).toFixed(2)}`,
+      link: `/dashboard/escrow/${result.id}`,
+    })
     return { success: true, escrow: result }
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Gagal refund escrow"
@@ -197,10 +226,13 @@ export async function getEscrows() {
     where:
       user?.role === "SELLER"
         ? { sellerId: session.user.id }
-        : { buyerId: session.user.id },
+        : user?.role === "ADMIN"
+          ? {}
+          : { buyerId: session.user.id },
     include: {
       buyer: { select: { name: true, email: true } },
       seller: { select: { name: true, email: true } },
+      dispute: true,
     },
     orderBy: { createdAt: "desc" },
   })

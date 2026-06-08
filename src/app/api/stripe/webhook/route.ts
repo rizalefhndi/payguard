@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import Stripe from "stripe"
+import { createNotif } from "@/lib/notify"
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -53,6 +54,15 @@ export async function POST(req: Request) {
           walletId: wallet.id,
         },
       })
+    })
+
+    // Notif ke buyer
+    await createNotif({
+      userId,
+      type: "TOPUP_SUCCESS",
+      title: "Top-up berhasil",
+      message: `Saldo kamu berhasil ditambahkan sebesar $${amount.toFixed(2)}`,
+      link: "/dashboard/transactions",
     })
   }
 

@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { getEscrows } from "@/actions/escrow"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -25,73 +25,77 @@ export default async function EscrowPage() {
   const escrows = result.escrows ?? []
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold">Escrow</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Kelola transaksi escrow kamu
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/dashboard">
-              <Button variant="outline">← Dashboard</Button>
-            </Link>
-            <Link href="/dashboard/escrow/new">
-              <Button>+ Buat Escrow</Button>
-            </Link>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Escrow</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Kelola transaksi escrow kamu
+          </p>
         </div>
-
-        {escrows.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground text-sm">Belum ada escrow</p>
-              <Link href="/dashboard/escrow/new">
-                <Button className="mt-4">Buat Escrow Pertama</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {escrows.map((escrow) => (
-              <Card key={escrow.id}>
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{escrow.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Buyer: {escrow.buyer.name} → Seller: {escrow.seller.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(escrow.createdAt), {
-                          addSuffix: true,
-                          locale: id,
-                        })}
-                      </p>
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-2">
-                      <p className="font-semibold">
-                        ${Number(escrow.amount).toFixed(2)}
-                      </p>
-                      <Badge variant={statusVariant[escrow.status] ?? "secondary"}>
-                        {escrow.status}
-                      </Badge>
-                      <EscrowActions
-                        escrowId={escrow.id}
-                        status={escrow.status}
-                        buyerId={escrow.buyerId}
-                        currentUserId={session.user.id}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        <Link href="/dashboard/escrow/new">
+          <Button size="sm">+ Buat Escrow</Button>
+        </Link>
       </div>
+
+      {escrows.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground text-sm">Belum ada escrow</p>
+            <Link href="/dashboard/escrow/new">
+              <Button className="mt-4">Buat Escrow Pertama</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {escrows.map((escrow) => (
+            <Card key={escrow.id}>
+              <CardContent className="py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/dashboard/escrow/${escrow.id}`}
+                      className="font-medium text-sm hover:underline underline-offset-2 truncate block"
+                    >
+                      {escrow.description}
+                    </Link>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Buyer: {escrow.buyer.name} → Seller: {escrow.seller.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(escrow.createdAt), {
+                        addSuffix: true,
+                        locale: id,
+                      })}
+                    </p>
+                    {escrow.status === "DISPUTED" && escrow.dispute && (
+                      <p className="text-xs text-destructive mt-1 font-medium">
+                        ⚠ Dispute aktif
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right flex flex-col items-end gap-2 shrink-0">
+                    <p className="font-semibold text-sm">
+                      ${Number(escrow.amount).toFixed(2)}
+                    </p>
+                    <Badge variant={statusVariant[escrow.status] ?? "secondary"}>
+                      {escrow.status}
+                    </Badge>
+                    <EscrowActions
+                      escrowId={escrow.id}
+                      status={escrow.status}
+                      buyerId={escrow.buyerId}
+                      sellerId={escrow.sellerId}
+                      currentUserId={session.user.id}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -20,6 +20,7 @@ model User {
   wallet        Wallet?
   escrowsAsBuyer  Escrow[] @relation("BuyerEscrows")
   escrowsAsSeller Escrow[] @relation("SellerEscrows")
+  notifications Notification[]
   accounts      Account[]
   sessions      Session[]
 }
@@ -53,8 +54,37 @@ model Escrow {
   sellerId    String
   buyer       User         @relation("BuyerEscrows", fields: [buyerId], references: [id])
   seller      User         @relation("SellerEscrows", fields: [sellerId], references: [id])
+  dispute     Dispute?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+}
+
+model Dispute {
+  id         String   @id @default(cuid())
+  escrowId   String   @unique
+  escrow     Escrow   @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  filedBy    String
+  reason     String
+  response   String?
+  resolvedBy String?
+  resolution String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 model Account {

@@ -4,7 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { createNotif, createNotifMany } from "@/lib/notify"
+import { createNotifMany } from "@/lib/notify"
 
 // ============================================
 // FILE DISPUTE — Seller ajukan dispute

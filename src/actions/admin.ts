@@ -3,9 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
-
-export const roleSchema = z.enum(["BUYER", "SELLER", "ADMIN"])
+import { roleSchema } from "@/lib/schemas"
 
 // ============================================
 // UPDATE USER ROLE — Admin only

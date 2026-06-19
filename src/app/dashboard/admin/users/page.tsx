@@ -10,9 +10,8 @@ import { format } from "date-fns"
 import { id } from "date-fns/locale"
 import { Users, Search } from "lucide-react"
 import RoleSelect from "@/components/dashboard/role-select"
-import { roleSchema } from "@/actions/admin"
+import { roleSchema } from "@/lib/schemas"
 import type { Prisma } from "@prisma/client"
-import { z } from "zod"
 
 const PAGE_SIZE = 20
 

@@ -21,7 +21,7 @@ export async function updateProfile(input: z.infer<typeof profileSchema>) {
   if (!session?.user?.id) return { error: "Unauthorized" }
 
   const parsed = profileSchema.safeParse(input)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { name, email } = parsed.data
 
@@ -46,7 +46,7 @@ export async function changePassword(input: z.infer<typeof passwordSchema>) {
   if (!session?.user?.id) return { error: "Unauthorized" }
 
   const parsed = passwordSchema.safeParse(input)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { currentPassword, newPassword } = parsed.data
 

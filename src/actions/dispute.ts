@@ -14,7 +14,7 @@ export async function fileDispute(escrowId: string, reason: string) {
   if (!session?.user?.id) return { error: "Unauthorized" }
 
   const parsed = z.string().min(10, "Alasan minimal 10 karakter").safeParse(reason)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: "Alasan minimal 10 karakter" }
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -80,7 +80,7 @@ export async function respondToDispute(escrowId: string, response: string) {
   if (!session?.user?.id) return { error: "Unauthorized" }
 
   const parsed = z.string().min(10, "Respon minimal 10 karakter").safeParse(response)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: "Respon minimal 10 karakter" }
 
   try {
     const result = await prisma.$transaction(async (tx) => {

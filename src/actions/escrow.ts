@@ -4,7 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { createNotif, createNotifMany } from "@/lib/notify"
+import { createNotif } from "@/lib/notify"
 
 const createEscrowSchema = z.object({
   sellerId: z.string(),

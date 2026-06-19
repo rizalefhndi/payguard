@@ -12,6 +12,7 @@ import { Users, Search } from "lucide-react"
 import RoleSelect from "@/components/dashboard/role-select"
 import { roleSchema } from "@/actions/admin"
 import type { Prisma } from "@prisma/client"
+import { z } from "zod"
 
 const PAGE_SIZE = 20
 
@@ -45,7 +46,7 @@ export default async function AdminUsersPage({
   const currentPage = Math.max(1, parseInt(page ?? "1", 10))
 
   // Use the same zod schema from admin.ts as the single source of truth
-  type ValidRole = typeof roleSchema._type
+  type ValidRole = z.infer<typeof roleSchema>
   const parsed = roleSchema.safeParse(role)
   const roleFilter: ValidRole | undefined = parsed.success ? parsed.data : undefined
 
